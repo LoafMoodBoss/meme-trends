@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meme Trend Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0e0e0f;--bg2:#161618;--bg3:#1e1e21;
+    --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+    --text:#f0ede8;--text2:#9b9895;--text3:#5a5855;
+    --accent:#ff4d00;--accent2:#ff8c42;
+    --green:#2dca72;--yellow:#f5c542;--blue:#4d9fff;
+    --radius:10px;--radius-lg:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  header{border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(14,14,15,0.95);backdrop-filter:blur(12px);z-index:100}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .logo-text{font-size:16px;font-weight:700}
+  .logo-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+  .header-right{display:flex;align-items:center;gap:12px}
+  .live-dot{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);font-family:'DM Mono',monospace}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  .refresh-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:8px 16px;border-radius:var(--radius);font-family:'Syne',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+  .refresh-btn:hover{border-color:var(--accent);color:var(--accent2)}
+  .refresh-btn:disabled{opacity:.4;cursor:not-allowed}
+
+  main{max-width:860px;margin:0 auto;padding:32px 24px}
+
+  .setup-banner{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:24px 28px;margin-bottom:28px;display:none}
+  .setup-banner.visible{display:block}
+  .setup-banner h2{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--accent2)}
+  .steps{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+  .step{display:flex;gap:12px;align-items:flex-start}
+  .step-n{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .step-t{font-size:13px;color:var(--text2);line-height:1.5}
+  .step-t code{color:var(--green);font-family:'DM Mono',monospace;font-size:12px}
+  .setup-note{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:12px}
+  .hide-btn{font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:'Syne',sans-serif;text-decoration:underline;margin-top:12px}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+  .stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
+  .stat-label{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .stat-val{font-size:26px;font-weight:700}
+  .stat-val.accent{color:var(--accent2)}
+  .stat-val.green{color:var(--green)}
+  .stat-val.blue{color:var(--blue)}
+
+  .controls{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+  .chip{font-size:13px;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:500;transition:all .15s}
+  .chip:hover{border-color:var(--accent);color:var(--accent2)}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .sub-filter{margin-left:auto;font-size:13px;padding:6px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg2);color:var(--text2);font-family:'Syne',sans-serif;cursor:pointer}
+  .sub-filter option{background:var(--bg2)}
+
+  .feed{display:flex;flex-direction:column;gap:8px}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;display:flex;gap:16px;align-items:flex-start;transition:border-color .15s;animation:fadeIn .3s ease both}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .card:hover{border-color:var(--border2)}
+  .card.video-card{border-left:2px solid var(--accent)}
+  .rank{font-size:12px;font-family:'DM Mono',monospace;color:var(--text3);min-width:22px;padding-top:4px;text-align:right}
+  .thumb{width:80px;height:80px;border-radius:var(--radius);background:var(--bg3);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);position:relative}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .play-badge{position:absolute;bottom:4px;right:4px;background:var(--accent);border-radius:4px;font-size:9px;padding:2px 5px;font-weight:700;color:#fff;font-family:'DM Mono',monospace}
+  .thumb-icon{font-size:28px;opacity:.2}
+  .info{flex:1;min-width:0}
+  .title{font-size:14px;font-weight:500;color:var(--text);line-height:1.45;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .sub-tag{font-size:11px;font-family:'DM Mono',monospace;color:var(--blue);background:rgba(77,159,255,.1);padding:2px 7px;border-radius:4px}
+  .score{font-size:12px;font-family:'DM Mono',monospace;color:var(--text2)}
+  .time-ago{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+  .velocity{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'DM Mono',monospace}
+  .vel-hot{background:rgba(255,77,0,.15);color:var(--accent2)}
+  .vel-rising{background:rgba(245,197,66,.12);color:var(--yellow)}
+  .vel-new{background:rgba(77,159,255,.1);color:var(--blue)}
+  .actions{display:flex;gap:8px}
+  .btn{font-size:12px;padding:5px 12px;border-radius:var(--radius);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;text-decoration:none;display:inline-block;transition:all .15s}
+  .btn:hover{background:var(--bg3);color:var(--text)}
+  .btn-primary{border-color:var(--accent);color:var(--accent2)}
+  .btn-primary:hover{background:rgba(255,77,0,.1)}
+
+  .state-box{text-align:center;padding:4rem 0;color:var(--text3);font-size:14px;font-family:'DM Mono',monospace;line-height:2}
+  .spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .error-box{background:rgba(255,77,0,.06);border:1px solid rgba(255,77,0,.2);border-radius:var(--radius-lg);padding:28px;text-align:center;color:var(--accent2);font-size:14px;line-height:1.8}
+
+  footer{margin-top:48px;padding:24px 0;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text3);font-family:'DM Mono',monospace}
+  @media(max-width:600px){.stats-row{grid-template-columns:repeat(2,1fr)}main{padding:20px 16px}header{padding:14px 16px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🔥</div>
+    <div>
+      <div class="logo-text">Meme Trend Finder</div>
+      <div class="logo-sub">reddit → shorts pipeline</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-dot"><div class="dot"></div><span id="update-time">—</span></div>
+    <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">↻ Обновить</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="setup-banner" id="setup-banner">
+    <h2>Нужно настроить прокси в Chrome — один раз</h2>
+    <div class="steps">
+      <div class="step"><div class="step-n">1</div><div class="step-t">Нажми Win+R → введи <code>inetcpl.cpl</code> → Enter</div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-t">Вкладка "Подключения" → "Настройка сети"</div></div>
+      <div class="step"><div class="step-n">3</div><div class="step-t">Поставь галку "Использовать прокси-сервер" → Адрес: <code>175.110.115.169</code> Порт: <code>443</code></div></div>
+      <div class="step"><div class="step-n">4</div><div class="step-t">Нажми ОК, перезапусти Chrome, открой этот файл снова</div></div>
+      <div class="step"><div class="step-n">5</div><div class="step-t">Chrome спросит логин/пароль прокси — введи свои данные от Asocks</div></div>
+    </div>
+    <div class="setup-note">После настройки нажми Обновить — всё заработает.</div>
+    <button class="hide-btn" onclick="hideBanner()">Скрыть инструкцию</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Всего найдено</div><div class="stat-val" id="stat-total">—</div></div>
+    <div class="stat"><div class="stat-label">🔥 Горячих</div><div class="stat-val accent" id="stat-hot">—</div></div>
+    <div class="stat"><div class="stat-label">▶ Видео</div><div class="stat-val green" id="stat-video">—</div></div>
+    <div class="stat"><div class="stat-label">↑ Rising</div><div class="stat-val blue" id="stat-rising">—</div></div>
+  </div>
+
+  <div class="controls">
+    <button class="chip active" data-filter="all">Все</button>
+    <button class="chip" data-filter="video">Только видео</button>
+    <button class="chip" data-filter="hot">🔥 Горячие</button>
+    <button class="chip" data-filter="rising">↑ Rising</button>
+    <select class="sub-filter" id="sub-filter">
+      <option value="all">Все сабреддиты</option>
+      <option value="r/dankmemes">r/dankmemes</option>
+      <option value="r/memes">r/memes</option>
+      <option value="r/Unexpected">r/Unexpected</option>
+      <option value="r/therewasanattempt">r/therewasanattempt</option>
+      <option value="r/instant_regret">r/instant_regret</option>
+      <option value="r/perfectlycutscreams">r/perfectlycutscreams</option>
+      <option value="r/funny">r/funny</option>
+    </select>
+  </div>
+
+  <div class="feed" id="feed">
+    <div class="state-box"><div class="spinner"></div>Загружаем мемы с Reddit...</div>
+  </div>
+
+  <footer>данные: Reddit Public API · полностью бесплатно · обновляй раз в день</footer>
+</main>
+
+<script>
+const SUBS = ['dankmemes','memes','Unexpected','therewasanattempt','instant_regret','perfectlycutscreams','funny'];
+let allPosts = [], activeFilter = 'all', activeSub = 'all';
+
+function vel(score, created) {
+  const h = (Date.now()/1000 - created) / 3600;
+  const v = score / Math.max(h, 0.5);
+  if (v > 800) return {label:'🔥 HOT', cls:'vel-hot', key:'hot'};
+  if (v > 200) return {label:'↑ RISING', cls:'vel-rising', key:'rising'};
+  return {label:'NEW', cls:'vel-new', key:'new'};
+}
+function isVid(p) {
+  return p.is_video||(p.url||'').includes('v.redd.it')||(p.url||'').endsWith('.gif')
+    ||(p.url||'').endsWith('.gifv')||p.domain==='gfycat.com'||p.domain==='streamable.com';
+}
+function fmtNum(n){return n>=1000?(n/1000).toFixed(1)+'k':String(n)}
+function timeAgo(ts){
+  const m=Math.floor((Date.now()/1000-ts)/60);
+  if(m<60)return m+'м назад';
+  const h=Math.floor(m/60);
+  if(h<24)return h+'ч назад';
+  return Math.floor(h/24)+'д назад';
+}
+function getThumb(p){
+  if(p.thumbnail&&p.thumbnail.startsWith('http'))return p.thumbnail;
+  try{const s=p.preview?.images?.[0]?.source?.url;if(s)return s.replace(/&amp;/g,'&')}catch{}
+  return null;
+}
+function hideBanner(){document.getElementById('setup-banner').classList.remove('visible')}
+
+async function fetchSub(subName) {
+  try {
+    const url = `https://www.reddit.com/r/${subName}/hot.json?limit=25&raw_json=1`;
+    const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    return (d?.data?.children||[]).map(c=>({...c.data, _sub:`r/${subName}`}));
+  } catch { return []; }
+}
+
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  let posts = [...allPosts];
+  if(activeSub!=='all') posts=posts.filter(p=>p._sub===activeSub);
+  if(activeFilter==='video') posts=posts.filter(p=>p._vid);
+  if(activeFilter==='hot') posts=posts.filter(p=>p._vel.key==='hot');
+  if(activeFilter==='rising') posts=posts.filter(p=>p._vel.key==='rising');
+  posts=posts.slice(0,10);
+  if(!posts.length){
+    feed.innerHTML='<div class="state-box">Нет постов по фильтру.<br>Попробуй "Все" или нажми Обновить.</div>';
+    return;
+  }
+  feed.innerHTML=posts.map((p,i)=>{
+    const t=getThumb(p);
+    const ru='https://reddit.com'+p.permalink;
+    const dl=p.is_video&&p.media?.reddit_video?.fallback_url?p.media.reddit_video.fallback_url:null;
+    return `<div class="card${p._vid?' video-card':''}" style="animation-delay:${i*0.04}s">
+      <div class="rank">${i+1}</div>
+      <div class="thumb">
+        ${t?`<img src="${t}" loading="lazy" onerror="this.style.display='none'">`:`<div class="thumb-icon">${p._vid?'▶':'🖼'}</div>`}
+        ${p._vid?'<div class="play-badge">VIDEO</div>':''}
+      </div>
+      <div class="info">
+        <div class="title">${p.title.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        <div class="meta">
+          <span class="sub-tag">${p._sub}</span>
+          <span class="score">▲ ${fmtNum(p.score)}</span>
+          <span class="velocity ${p._vel.cls}">${p._vel.label}</span>
+          <span class="time-ago">${timeAgo(p.created_utc)}</span>
+        </div>
+        <div class="actions">
+          <a class="btn btn-primary" href="${ru}" target="_blank">Открыть на Reddit ↗</a>
+          ${dl?`<a class="btn" href="${dl}" target="_blank">Скачать видео</a>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadAll() {
+  const btn=document.getElementById('refresh-btn');
+  btn.disabled=true; btn.textContent='↻ Загружаем...';
+  document.getElementById('feed').innerHTML='<div class="state-box"><div class="spinner"></div>Загружаем мемы с Reddit...<br><span style="font-size:11px">обычно 5-10 секунд</span></div>';
+  ['stat-total','stat-hot','stat-video','stat-rising'].forEach(id=>document.getElementById(id).textContent='...');
+
+  const results = await Promise.all(SUBS.map(fetchSub));
+  let posts = results.flat();
+
+  const seen=new Set();
+  posts=posts.filter(p=>{
+    if(!p?.id||seen.has(p.id))return false;
+    seen.add(p.id);
+    return !p.stickied&&p.score>30;
+  });
+  posts.forEach(p=>{p._vel=vel(p.score,p.created_utc);p._vid=isVid(p);});
+  posts.sort((a,b)=>{
+    const va=a.score/Math.max((Date.now()/1000-a.created_utc)/3600,0.5);
+    const vb=b.score/Math.max((Date.now()/1000-b.created_utc)/3600,0.5);
+    return vb-va;
+  });
+  allPosts=posts;
+
+  document.getElementById('stat-total').textContent=posts.length;
+  document.getElementById('stat-hot').textContent=posts.filter(p=>p._vel.key==='hot').length;
+  document.getElementById('stat-video').textContent=posts.filter(p=>p._vid).length;
+  document.getElementById('stat-rising').textContent=posts.filter(p=>p._vel.key==='rising').length;
+
+  const now=new Date();
+  document.getElementById('update-time').textContent=`обновлено ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  if(posts.length===0){
+    document.getElementById('setup-banner').classList.add('visible');
+    document.getElementById('feed').innerHTML=`
+      <div class="error-box">
+        Reddit не отвечает — скорее всего прокси ещё не настроен.<br>
+        Смотри инструкцию выше ↑<br><br>
+        <button onclick="loadAll()" style="background:none;border:1px solid var(--accent2);color:var(--accent2);padding:7px 16px;border-radius:8px;cursor:pointer;font-family:Syne,sans-serif;font-size:13px">Попробовать снова</button>
+      </div>`;
+  } else {
+    renderFeed();
+  }
+
+  btn.disabled=false; btn.textContent='↻ Обновить';
+}
+
+document.querySelectorAll('.chip').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.chip').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter=btn.dataset.filter;
+    renderFeed();
+  });
+});
+document.getElementById('sub-filter').addEventListener('change',e=>{activeSub=e.target.value;renderFeed();});
+
+loadAll();
+</script>
+</body>
+</html>
